@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SilentAid Emergency SOS</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <style>
+    :root {
+      --bg-color: #f8fafc;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      
+      --color-pain: #ef4444;
+      --color-help: #f59e0b;
+      --color-medicine: #3b82f6;
+      --color-breathing: #10b981;
+      --color-water: #06b6d4;
+      --color-ambulance: #b91c1c;
+      --color-police: #1e3a8a;
+      --color-toilet: #64748b;
+      --color-contact: #047857;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+    }
+
+    .app-header {
+      background-color: #dc2626;
+      color: white;
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .app-header h1 { margin: 0; font-size: 22px; font-weight: 700; }
+    #shake-status-text { font-size: 11px; opacity: 0.85; margin-top: 2px; }
+    
+    .header-controls { display: flex; align-items: center; gap: 12px; }
+
+    #lang-toggle-btn {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 1px solid white;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .settings-icon-btn {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    .container { max-width: 500px; margin: 0 auto; padding: 16px; box-sizing: border-box; }
+
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border-radius: 16px;
+      height: 110px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 600;
+      color: white;
+      cursor: pointer;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      transition: transform 0.1s ease;
+      user-select: none;
+      gap: 8px;
+    }
+
+    .card i { font-size: 26px; }
+    .card:active { transform: scale(0.96); }
+
+    .card.pain { background-color: var(--color-pain); }
+    .card.help { background-color: var(--color-help); }
+    .card.medicine { background-color: var(--color-medicine); }
+    .card.breathing { background-color: var(--color-breathing); }
+    .card.water { background-color: var(--color-water); }
+    .card.ambulance { background-color: var(--color-ambulance); }
+    .card.police { background-color: var(--color-police); }
+    .card.toilet { background-color: var(--color-toilet); }
+    .card.contact { background-color: var(--color-contact); }
+
+    .public-contact-card {
+      background: white;
+      border-radius: 16px;
+      padding: 16px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .public-contact-card h2 { margin: 0 0 8px 0; font-size: 15px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .contact-display-info { font-size: 17px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; }
+
+    /* 🔐 MODAL BOX FOR EDITING DATA PROFILE */
+    .edit-modal-backdrop {
+      position: fixed; top:0; left:0; width:100vw; height:100vh;
+      background: rgba(0,0,0,0.6); z-index: 500;
+      display: none; align-items: center; justify-content: center;
+    }
+    .edit-modal-content {
+      background: white; width: 90%; max-width: 440px;
+      border-radius: 20px; padding: 24px; box-sizing: border-box;
+      max-height: 85vh; overflow-y: auto;
+    }
+
+    label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #475569; }
+    input[type="text"], input[type="tel"], input[type="password"], select, textarea {
+      width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; box-sizing: border-box; margin-bottom: 14px; background-color: #f8fafc;
+    }
+
+    .btn-action { width: 100%; background-color: #dc2626; color: white; border: none; padding: 12px; font-size: 15px; font-weight: 600; border-radius: 8px; cursor: pointer; }
+    .btn-action.secondary { background-color: #64748b; margin-top: 8px;}
+
+    /* 🚨 FULL SCREEN BLINKING ENGINE OVERLAY */
+    .emote-overlay {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background-color: #0b090a; z-index: 9999;
+      display: flex; flex-direction: column; align-items: center;
+      padding-top: 60px; box-sizing: border-box;
+      opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+      overflow-y: auto;
+    }
+    .emote-overlay.active { opacity: 1; pointer-events: auto; }
+
+    .emote-circle {
+      width: 170px; height: 170px; border-radius: 50%;
+      background-color: #ef4444; display: flex; align-items: center; justify-content: center;
+      font-size: 70px; color: white; animation: calling-pulse 1.5s infinite; flex-shrink: 0;
+    }
+    .emote-title { margin-top: 14px; font-size: 30px; font-weight: 800; color: #ef4444; text-transform: uppercase; margin-bottom: 20px; }
+
+    /* POP-UP DATA MODAL CONTROLLER Inside Distress Layer */
+    .emergency-pop-up-modal {
+      width: 90%; max-width: 400px; background: white; border-radius: 20px;
+      padding: 20px; box-sizing: border-box; box-shadow: 0 -10px 25px rgba(0,0,0,0.5);
+      margin-bottom: 30px; display: none; /* Controlled dynamically by app.js */
+    }
+    .emergency-pop-up-modal h2 { margin: 0 0 12px 0; font-size: 19px; color: #b91c1c; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #fee2e2; padding-bottom: 6px; }
+    .pop-up-data-row { margin-bottom: 10px; font-size: 14px; color: #1e293b; }
+    .pop-up-data-row strong { color: #475569; display: block; font-size: 11px; text-transform: uppercase; margin-bottom: 2px; }
+    .pop-up-data-row span { font-size: 14px; font-weight: 600; }
+
+    .btn-close-overlay {
+      position: absolute; top: 16px; right: 16px;
+      background: rgba(255, 255, 255, 0.15); color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3); padding: 8px 16px; border-radius: 30px; font-weight: bold; cursor: pointer;
+    }
+
+    @keyframes calling-pulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.8), 0 0 0 15px rgba(239, 68, 68, 0.3); }
+      50% { transform: scale(1.02); box-shadow: 0 0 0 20px rgba(239, 68, 68, 0), 0 0 0 40px rgba(239, 68, 68, 0.1); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0), 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+
+    .status-toast {
+      position: fixed; bottom: -60px; left: 50%; transform: translateX(-50%);
+      background-color: #1e293b; color: white; padding: 12px 24px; border-radius: 30px; font-size: 14px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3); z-index: 1000; transition: bottom 0.3s ease-in-out;
+    }
+    .status-toast.visible { bottom: 24px; }
+  </style>
+</head>
+<body>
+
+  <div class="app-header">
+    <div>
+      <h1>SilentAid</h1>
+      <div id="shake-status-text">Shake SOS active — shake 3x to trigger emergency</div>
+    </div>
+    <div class="header-controls">
+      <button id="lang-toggle-btn" onclick="toggleLanguage()">தமிழ்</button>
+      <button class="settings-icon-btn" onclick="openUnlockDialog()"><i class="fa-solid fa-gear"></i></button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="grid-container">
+      <div class="card pain" onclick="triggerManualSOS('Pain')">
+        <i class="fa-solid fa-face-frown-open"></i>
+        <span id="txt-card-pain">Pain</span>
+      </div>
+      <div class="card help" onclick="triggerManualSOS('Help')">
+        <i class="fa-solid fa-hands-helping"></i>
+        <span id="txt-card-help">Help</span>
+      </div>
+      <div class="card medicine" onclick="triggerManualSOS('Medicine')">
+        <i class="fa-solid fa-capsules"></i>
+        <span id="txt-card-medicine">Medicine</span>
+      </div>
+      <div class="card breathing" onclick="triggerManualSOS('Breathing')">
+        <i class="fa-solid fa-lungs"></i>
+        <span id="txt-card-breathing">Breathing</span>
+      </div>
+      <div class="card water" onclick="triggerManualSOS('Water')">
+        <i class="fa-solid fa-droplet"></i>
+        <span id="txt-card-water">Water</span>
+      </div>
+      <div class="card ambulance" onclick="triggerManualSOS('Ambulance')">
+        <i class="fa-solid fa-truck-medical"></i>
+        <span id="txt-card-ambulance">Ambulance</span>
+      </div>
+      <div class="card police" onclick="triggerManualSOS('Police')">
+        <i class="fa-solid fa-shield-halved"></i>
+        <span id="txt-card-police">Police</span>
+      </div>
+      <div class="card toilet" onclick="triggerManualSOS('Toilet')">
+        <i class="fa-solid fa-restroom"></i>
+        <span id="txt-card-toilet">Toilet</span>
+      </div>
+      <div class="card contact" onclick="triggerManualSOS('Emergency Contact')">
+        <i class="fa-solid fa-address-book"></i>
+        <span id="txt-card-contact">Contact</span>
+      </div>
+    </div>
+
+    <div class="public-contact-card">
+      <h2 id="lbl-main-contact-title">Primary Emergency Contact</h2>
+      <div class="contact-display-info">
+        <i class="fa-solid fa-phone-flip" style="color:#047857;"></i>
+        <span id="main-contact-display">No Contact Configured</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="settings-modal" class="edit-modal-backdrop">
+    <div class="edit-modal-content">
+      <h2 id="txt-profile-title" style="margin-top:0; font-size:22px;">Medical Profile</h2>
+      
+      <div id="password-lock-box">
+        <p id="txt-lock-desc" style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">Enter password passcode validation rules to edit values.</p>
+        <input type="password" id="input-lock-password" placeholder="Enter Unlock Code (Default: 1234)">
+        <button class="btn-action" onclick="verifyManagementPasscode()">Unlock Profile</button>
+        <button class="btn-action secondary" onclick="closeManagementModal()">Cancel</button>
+      </div>
+
+      <div id="profile-inputs-form" style="display:none;">
+        <p id="txt-profile-desc" style="font-size:13px; color:var(--text-muted);">Update configuration. Encrypted client-side dynamically.</p>
+        
+        <label id="lbl-fullname">Full Name</label>
+        <input type="text" id="input-fullname" placeholder="Jane Doe">
+        
+        <label id="lbl-bloodgroup">Blood Group</label>
+        <select id="input-bloodgroup">
+          <option value="">Select Blood Group</option>
+          <option value="A+">A+</option><option value="B+">B+</option><option value="O+">O+</option><option value="AB+">AB+</option>
+        </select>
+        
+        <label id="lbl-allergies">Allergies</label>
+        <textarea id="input-allergies" placeholder="Penicillin, etc."></textarea>
+        
+        <h3 id="lbl-emergcontact" style="font-size:15px; margin:15px 0 10px 0; color:#475569;">Emergency Contact</h3>
+        <label id="lbl-contactname">Contact Name</label>
+        <input type="text" id="input-contactname" placeholder="John Doe">
+        
+        <label id="lbl-contactphone">Contact Phone</label>
+        <input type="tel" id="input-contactphone" placeholder="+1 (555) 000-0000">
+        
+        <label id="lbl-medconditions">Medical Conditions</label>
+        <textarea id="input-conditions" placeholder="Asthma, etc."></textarea>
+        
+        <button class="btn-action" id="btn-save-profile" onclick="saveProfileData()">Save Profile</button>
+        <button class="btn-action secondary" onclick="closeManagementModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="emergency-overlay" class="emote-overlay">
+    <button class="btn-close-overlay" onclick="closeEmergencyOverlay()">✕ Close</button>
+    <div id="overlay-circle" class="emote-circle">🚨</div>
+    <div id="overlay-label" class="emote-title">Pain</div>
+
+    <div id="medical-popup-card" class="emergency-pop-up-modal">
+      <h2><i class="fa-solid fa-file-medical"></i> <span id="pop-title">Emergency Medical Info</span></h2>
+      <div class="pop-up-data-row"><strong id="pop-lbl-name">Patient Name</strong><span id="pop-val-name">--</span></div>
+      <div class="pop-up-data-row"><strong id="pop-lbl-blood">Blood Group</strong><span id="pop-val-blood" style="color:#b91c1c;">--</span></div>
+      <div class="pop-up-data-row"><strong id="pop-lbl-allergies">Allergies</strong><span id="pop-val-allergies" style="color:#d97706;">--</span></div>
+      <div class="pop-up-data-row"><strong id="pop-lbl-conditions">Medical Conditions</strong><span id="pop-val-conditions">--</span></div>
+      <div class="pop-up-data-row" style="background:#f0fdf4; padding:10px; border-radius:8px; border:1px solid #bbf7d0;">
+        <strong id="pop-lbl-contact" style="color:#16a34a;">Call Emergency Contact</strong><span id="pop-val-contact" style="color:#14532d;">--</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="status-toast" id="toast-bar">Action complete</div>
+
+  <script src="/js/crypto.js"></script>
+  <script src="/js/shake.js"></script>
+  <script src="/js/sos.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>

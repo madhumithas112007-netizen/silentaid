@@ -1,0 +1,17 @@
+{
+  "name": "silentaid",
+  "version": "1.0.0",
+  "description": "SilentAid – Shake-to-SOS emergency app with encrypted medical data",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.22.2",
+    "twilio": "^4.23.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
