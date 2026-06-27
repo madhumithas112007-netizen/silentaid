@@ -75,7 +75,6 @@ node server.js
 ```
 Open `http://localhost:3000` in your browser.
 
-Or visit the **live demo:** [https://silentaid--maanusrijagan.replit.app]`
 
 ---
 
